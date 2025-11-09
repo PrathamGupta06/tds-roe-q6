@@ -1,0 +1,89 @@
+name: Multi-Platform Matrix Build
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  matrix-build:
+    name: Build on ${{ matrix.os }} with Node ${{ matrix.node-version }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node-version: [18, 20]
+        include:
+          - os: ubuntu-latest
+            artifact-name: linux
+          - os: macos-latest
+            artifact-name: macos
+          - os: windows-latest
+            artifact-name: windows
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: matrix-5d5602f
+        run: |
+          echo "Building for ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
+          echo "Matrix variant: ${{ matrix.artifact-name }}-node${{ matrix.node-version }}"
+      
+      - name: Generate build artifact
+        run: |
+          mkdir -p build
+          echo "Build Information" > build/output.txt
+          echo "==================" >> build/output.txt
+          echo "OS: ${{ matrix.os }}" >> build/output.txt
+          echo "Node Version: ${{ matrix.node-version }}" >> build/output.txt
+          echo "Build Time: $(date)" >> build/output.txt
+          echo "Runner: ${{ runner.name }}" >> build/output.txt
+          echo "Architecture: ${{ runner.arch }}" >> build/output.txt
+          echo "" >> build/output.txt
+          echo "Node.js Details:" >> build/output.txt
+          node --version >> build/output.txt
+          npm --version >> build/output.txt
+        shell: bash
+      
+      - name: Create build metadata JSON
+        run: |
+          node -e "console.log(JSON.stringify({ os: '${{ matrix.os }}', nodeVersion: '${{ matrix.node-version }}', variant: '${{ matrix.artifact-name }}', timestamp: new Date().toISOString(), runner: { name: '${{ runner.name }}', arch: '${{ runner.arch }}' } }, null, 2))" > build/metadata.json
+        shell: bash
+      
+      - name: Display build contents
+        run: |
+          echo "Build artifact contents:"
+          cat build/output.txt
+          echo ""
+          echo "Metadata:"
+          cat build/metadata.json
+        shell: bash
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-5d5602f-${{ matrix.artifact-name }}-node${{ matrix.node-version }}
+          path: build/
+          retention-days: 7
+          if-no-files-found: error
+  
+  summary:
+    name: Build Summary
+    needs: matrix-build
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Summary
+        run: |
+          echo "✅ All matrix builds completed successfully!"
+          echo "Built for 3 operating systems with 2 Node.js versions each"
+          echo "Total artifacts generated: 6"
