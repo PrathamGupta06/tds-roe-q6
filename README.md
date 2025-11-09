@@ -3,7 +3,7 @@
 This repository demonstrates a GitHub Actions workflow with matrix build strategy for multi-platform CI/CD.
 
 ## Contact Information
-Email: pratham@example.com
+Email: 23f3001608@ds.study.iitm.ac.in
 
 ## Workflow Overview
 
